@@ -4,60 +4,62 @@
     name: "{{ item }}"
     state: present
   loop: "{{ pkgs }}"
+  notify: 
+    - restart smb
+    - restart nmb
 
 - name: Including user account file - users-vault.yml
-  include_vars: "users-vault.yml"
+  include_vars: "users_groups-vault.yml"
 
 - name: Groups allowed
   group:
     name: "{{ item }}"
     state: present
-  loop: "{{ group }}"
+  loop: "{{ smb_groups }}"
+  when: smb_groups is defined and smb_groups | length > 0
 
 - name: Creating a user accounts
   user: 
     name: "{{ item.name }}"
     groups: "{{ item.group | default('users')}}"
-    shell: "/sbin/nologin"
+    shell: "{{ item.shell | default('/sbin/nologin') }}"
     state: present
-    create_home: "{{ item.home }}"
-  loop: "{{ user_accounts }}"
-              
-- name: setting a smb password
-  shell: "echo -e '{{ item.passwd }}\n{{ item.passwd }}\n' | smbpasswd -a {{ item.name }}"  #smbpasswd -sa {{ item.name }}
+    create_home: "{{ item.home | default('true') }}"
   no_log: true
   loop: "{{ user_accounts }}"
- 
+  
+              
+- name: Setting up a smb-password for users
+  include_tasks: smb_pass.yml
+  no_log: true
+  loop: "{{ user_accounts }}"
+  loop_control:
+    loop_var: item
+
 - name: shared directories
   file:
     path: "{{ item.path }}"
     state: directory
     mode: "{{ item.mode | default('2755') }}"
-    owner: root
-    group: "{{ item.group }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
   loop: "{{ shared_dirs }}"
+  notify: restart smb
 
 - name: modify the smb.conf file
   template:
     src: smb.conf.j2
     dest: /etc/samba/smb.conf  
+  notify: 
+    - restart smb
+    - restart nmb
 
-- name: restart smb service
+- name: start firewalld
   service:
-    name: "{{ item }}"
+    name: firewalld
     state: restarted
     enabled: true
-  loop: "{{ srvs }}"
-
-- name: configuring a firewall
-  firewalld:
-    service: "{{ item }}"
-    state: enabled
-    permanent: true
-    immediate: true
-  loop:
-    - samba
-
+  notify: config firewall rules
 
 - name: selinux
   selinux:

@@ -1,0 +1,12 @@
+---
+- block:
+    - name: Setting SMB password
+      shell: "echo -e '{{ item.passwd }}\n{{ item.passwd }}\n' | smbpasswd -a {{ item.name }}"
+      no_log: true
+      failed_when: item.passwd is not defined
+      notify: restart smb
+  rescue:
+    - name: Fail if password is not defined
+      fail:
+        msg: "{{ item.name }} does not define a smb-password"
+

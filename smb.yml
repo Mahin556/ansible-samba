@@ -1,12 +1,12 @@
 ---
 - name: cofiguring a samba server and client
-  hosts: smbserver, smbclient
+  hosts: smb-server, smbclient
   become: true
   tasks:
     - name: configuring a smb server 
       include_role: 
-        name: samba
-      when: inventory_hostname in groups['smbserver']
+        name: samba-server
+      when: inventory_hostname in groups['smb-server']
 
 
 

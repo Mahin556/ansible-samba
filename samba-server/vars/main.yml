@@ -1,12 +1,4 @@
 ---
-pkgs:
-  - samba
-  - samba-common
-  - samba-client
-
-group:
-  - smbgroup
-
     #[sharename] → Defines the name of the shared folder.
     #path = /path/to/share → Sets the directory being shared.
     #browseable = yes/no → Controls if the share is visible in network browsing.
@@ -24,24 +16,22 @@ group:
 
 shared_dirs:
   - { path: "/samba-share", 
-      mode: "2775", 
-      group: "smbgroup", 
+      mode: "2775", # default mode 2755
+      owner: "root", #default root
+      group: "smbgroup", # default root
       sharename: "smb1", 
       comment: "demo",
       browseable: "yes",
       read_only: "yes",
+      read_list: [],
       write_list: [ "@smbgroup" ], #Always List
-      valid_users: [ "smbuser1" ], #Always List
+      invalid_users: [],
+      valid_users: [ "smbuser1", "smbuser2", "smbuser3" ], #Always List
       guest_ok: "",
-      hosts_allow: [ "192.168.29.0/24" ], #Always List
-      create_mask: "0444",
-      directory_mask: "0666"
+      hosts_allow: [ "192.168.29.0/255.255.255.0", "192.168.1.0/255.255.255.0" ], #Always List
+      create_mask: "0644",
+      directory_mask: "0755"
 }
-
-srvs:
-  - smb
-  - nmb
-  - firewalld
 
 
 

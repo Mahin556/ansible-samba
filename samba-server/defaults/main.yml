@@ -1,2 +1,5 @@
 ---
-# defaults file for samba-server
+pkgs:
+  - samba
+  - samba-common
+  - samba-client
